@@ -1,6 +1,8 @@
 import os
+
 from anki.collection import Collection
 from anki.models import NoteType, TemplateDict
+
 from anki_sync_server import ASSET_PATH
 
 
