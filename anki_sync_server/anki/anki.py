@@ -5,6 +5,7 @@ from anki.collection import Collection, SyncStatus
 from anki.notes import Note
 
 from anki_sync_server.anki.model_creator import ModelCreator
+from anki_sync_server.thread import ThreadWithReturnValue
 
 
 class Anki:
@@ -23,7 +24,16 @@ class Anki:
         self._anki_model = None
         self._username = username
         self._password = password
-        self._auth = collection.sync_login(username, password)
+        sync_thread = ThreadWithReturnValue(
+            target=collection.sync_login,
+            args=(
+                username,
+                password,
+                "https://sync.ankiweb.net",
+            ),
+        )
+        sync_thread.start()
+        self._auth = sync_thread.join()
         self._new_auth = None
         self._media_sync_timeout_seconds = media_sync_timeout_seconds
 
@@ -62,6 +72,7 @@ class Anki:
         sync_status = self._collection.sync_status(self._auth)
         if sync_status.required == SyncStatus.NO_CHANGES:
             return
+        print(sync_status.new_endpoint)
         if self._new_auth is None and sync_status.new_endpoint is not None:
             self._new_auth = self._collection.sync_login(
                 self._username, self._password, sync_status.new_endpoint
