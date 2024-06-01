@@ -69,12 +69,6 @@ class Anki:
                 "googletts",
                 ".mp3",
             )
-            english_definition_audio_file = self._media_creator.create_media(
-                self._tts_service.generate_audio(english_definition),
-                "googletts",
-                ".mp3",
-            )
-
             note = self._collection.new_note(self._anki_model)
             note["Text"] = text
             note["TextTranslation"] = text_translation
@@ -84,9 +78,7 @@ class Anki:
             note["PartOfSpeech"] = part_of_speech
             note["CefrLevel"] = cefr_level
             note["Code"] = code
-            note["DefinitionAudio"] = "[sound:{}][sound:{}]".format(
-                word_audio_file, english_definition_audio_file
-            )
+            note["DefinitionAudio"] = "[sound:{}]".format(word_audio_file)
             note["TextAudio"] = "[sound:{}]".format(text_audio_file)
             self._collection.add_note(note, self._deck_id)
 
