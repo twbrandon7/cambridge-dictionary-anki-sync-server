@@ -9,7 +9,7 @@ class GcpTtsService(TtsService):
     def __init__(self, api_key: str):
         self._api_key = api_key
 
-    def _generate_audio(self, output_file: str, text: str) -> None:
+    def _generate_audio(self, text: str) -> bytes:
         """
         Raises:
             JSONDecodeError: If the response is not a valid JSON
@@ -20,9 +20,7 @@ class GcpTtsService(TtsService):
         if audio_content is None:
             raise Exception("No audio content")
 
-        audio_content = base64.b64decode(audio_content)
-        with open(output_file, "wb") as f:
-            f.write(audio_content)
+        return base64.b64decode(audio_content)
 
     def _make_request(self, text: str) -> dict:
         """

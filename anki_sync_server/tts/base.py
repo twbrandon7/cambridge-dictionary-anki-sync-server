@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 
 
 class TtsService(ABC):
-    def generate_audio(self, output_file: str, text: str) -> None:
-        self._generate_audio(output_file, text)
+    def generate_audio(self, text: str) -> bytes:
+        return self._generate_audio(text)
 
     @abstractmethod
-    def _generate_audio(self, output_file: str, text: str) -> None:
+    def _generate_audio(self, text: str) -> bytes:
         raise NotImplementedError
