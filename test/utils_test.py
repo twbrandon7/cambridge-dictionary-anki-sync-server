@@ -1,6 +1,6 @@
 import unittest
 
-from anki_sync_server.utils import remove_anki_cloze_tags
+from anki_sync_server.utils import remove_anki_cloze_tags, remove_html_tags
 
 
 class UtilsTest(unittest.TestCase):
@@ -57,6 +57,34 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(
             "I love Australian}} wines, especially the white wines.",
             remove_anki_cloze_tags(text),
+        )
+
+    def test_remove_html_tags(self):
+        text = "<p>I love Australian wines, especially the white wines.</p>"
+        self.assertEqual(
+            "I love Australian wines, especially the white wines.",
+            remove_html_tags(text),
+        )
+
+    def test_remove_html_tags_bold(self):
+        text = "<b>I love Australian wines, especially the white wines.</b>"
+        self.assertEqual(
+            "I love Australian wines, especially the white wines.",
+            remove_html_tags(text),
+        )
+
+    def test_remove_html_tags_broken_bold_left(self):
+        text = "<b>I love Australian wines, especially the white wines."
+        self.assertEqual(
+            "I love Australian wines, especially the white wines.",
+            remove_html_tags(text),
+        )
+
+    def test_remove_html_tags_broken_bold_right(self):
+        text = "I love Australian wines, especially the white wines.</b>"
+        self.assertEqual(
+            "I love Australian wines, especially the white wines.",
+            remove_html_tags(text),
         )
 
 

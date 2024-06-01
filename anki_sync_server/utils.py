@@ -20,3 +20,20 @@ def remove_anki_cloze_tags(text):
 
     # Use the re.sub function to replace the cloze deletion tags with the cloze text.
     return re.sub(pattern, r"\1", text)
+
+
+def remove_html_tags(text: str) -> str:
+    """
+    This function removes HTML tags from the given text.
+
+    Args:
+        text (str): The text from which to remove the HTML tags.
+
+    Returns:
+        str: The text with the HTML tags removed.
+    """
+    # The regular expression pattern for HTML tags.
+    pattern = r"<.*?>"
+
+    # Use the re.sub function to replace the HTML tags with an empty string.
+    return re.sub(pattern, "", text)
