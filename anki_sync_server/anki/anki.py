@@ -4,8 +4,11 @@ from threading import Lock
 from anki.collection import Collection, SyncOutput, SyncStatus
 from anki.notes import Note
 
+from anki_sync_server.anki.media_creator import MediaCreator
 from anki_sync_server.anki.model_creator import ModelCreator
 from anki_sync_server.thread import ThreadWithReturnValue
+from anki_sync_server.tts.base import TtsService
+from anki_sync_server.utils import remove_anki_cloze_tags
 
 
 class Anki:
@@ -14,6 +17,7 @@ class Anki:
         collection: Collection,
         username: str,
         password: str,
+        tts_service: TtsService,
         deck_name: str = "English Vocabulary",
         media_sync_timeout_seconds: int = 600,
     ) -> None:
@@ -21,9 +25,11 @@ class Anki:
         self._collection = collection
         self._deck_id = self._collection.decks.id_for_name(deck_name)
         self._model_creator = ModelCreator(collection)
+        self._media_creator = MediaCreator(collection)
         self._anki_model = None
         self._username = username
         self._password = password
+        self._tts_service = tts_service
         sync_thread = ThreadWithReturnValue(
             target=collection.sync_login,
             args=(
@@ -53,6 +59,22 @@ class Anki:
             if self._anki_model is None:
                 self._anki_model = self._model_creator.create_model()
 
+            text_audio_file = self._media_creator.create_media(
+                self._tts_service.generate_audio(remove_anki_cloze_tags(text)),
+                "googletts",
+                ".mp3",
+            )
+            word_audio_file = self._media_creator.create_media(
+                self._tts_service.generate_audio(word),
+                "googletts",
+                ".mp3",
+            )
+            english_definition_audio_file = self._media_creator.create_media(
+                self._tts_service.generate_audio(english_definition),
+                "googletts",
+                ".mp3",
+            )
+
             note = self._collection.new_note(self._anki_model)
             note["Text"] = text
             note["TextTranslation"] = text_translation
@@ -62,6 +84,10 @@ class Anki:
             note["PartOfSpeech"] = part_of_speech
             note["CefrLevel"] = cefr_level
             note["Code"] = code
+            note["DefinitionAudio"] = "[sound:{}][sound:{}]".format(
+                word_audio_file, english_definition_audio_file
+            )
+            note["TextAudio"] = "[sound:{}]".format(text_audio_file)
             self._collection.add_note(note, self._deck_id)
 
             self._sync()
@@ -71,14 +97,12 @@ class Anki:
         sync_status = self._collection.sync_status(self._auth)
         if sync_status.required == SyncStatus.NO_CHANGES:
             return
-        
+
         sync_attempt_result = self._collection.sync_collection(self._auth, True)
 
-        if sync_attempt_result.new_endpoint != '':
+        if sync_attempt_result.new_endpoint != "":
             new_auth = self._collection.sync_login(
-                self._username,
-                self._password,
-                sync_attempt_result.new_endpoint
+                self._username, self._password, sync_attempt_result.new_endpoint
             )
         else:
             new_auth = self._auth
@@ -87,7 +111,7 @@ class Anki:
             print("No changes is required")
             self._sync_media(new_auth)
             return
-        
+
         if sync_attempt_result.required == SyncOutput.NORMAL_SYNC:
             print("Normal sync is required")
             self._collection.sync_collection(self._auth, True)
@@ -98,14 +122,14 @@ class Anki:
             print("No data on server, skip.")
             return
 
-        if (sync_attempt_result.required == SyncOutput.FULL_SYNC
-            or sync_attempt_result.required == SyncOutput.FULL_DOWNLOAD):
+        if (
+            sync_attempt_result.required == SyncOutput.FULL_SYNC
+            or sync_attempt_result.required == SyncOutput.FULL_DOWNLOAD
+        ):
             if not allow_force_download:
                 raise Exception("Failed to sync, force download is not allowed")
             self._collection.full_upload_or_download(
-                auth=new_auth,
-                server_usn=None,
-                upload=False
+                auth=new_auth, server_usn=None, upload=False
             )
             self._sync_media(new_auth)
 
