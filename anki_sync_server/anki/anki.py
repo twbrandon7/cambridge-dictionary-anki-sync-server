@@ -8,7 +8,7 @@ from anki_sync_server.anki.media_creator import MediaCreator
 from anki_sync_server.anki.model_creator import ModelCreator
 from anki_sync_server.thread import ThreadWithReturnValue
 from anki_sync_server.tts.base import TtsService
-from anki_sync_server.utils import remove_anki_cloze_tags
+from anki_sync_server.utils import remove_anki_cloze_tags, remove_html_tags
 
 
 class Anki:
@@ -60,7 +60,9 @@ class Anki:
                 self._anki_model = self._model_creator.create_model()
 
             text_audio_file = self._media_creator.create_media(
-                self._tts_service.generate_audio(remove_anki_cloze_tags(text)),
+                self._tts_service.generate_audio(
+                    remove_anki_cloze_tags(remove_html_tags(text))
+                ),
                 "googletts",
                 ".mp3",
             )
