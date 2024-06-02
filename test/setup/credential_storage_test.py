@@ -36,8 +36,8 @@ class CredentialStorageTest(unittest.TestCase):
 
     def test_set_hashed_api_key(self):
         credential_storage = CredentialStorage()
-        credential_storage.set_hashed_api_key("api_key2")
-        self.assertEqual("api_key2", credential_storage.get_hashed_api_key())
+        credential_storage.set_hashed_api_key(b"api_key2")
+        self.assertEqual(b"api_key2", credential_storage.get_hashed_api_key())
     
     def test_set_server_secret_key(self):
         credential_storage = CredentialStorage()

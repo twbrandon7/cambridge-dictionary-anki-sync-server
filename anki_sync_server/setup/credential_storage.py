@@ -78,7 +78,7 @@ class CredentialStorage:
         return self._data.get("gcp_tts_api_key")
 
     @_reader
-    def get_hashed_api_key(self) -> str | None:
+    def get_hashed_api_key(self) -> bytes | None:
         return self._data.get("hashed_api_key")
 
     @_reader
@@ -91,7 +91,7 @@ class CredentialStorage:
     def set_gcp_tts_api_key(self, api_key: str) -> None:
         self._data["gcp_tts_api_key"] = api_key
 
-    def set_hashed_api_key(self, api_key: str) -> None:
+    def set_hashed_api_key(self, api_key: bytes) -> None:
         self._data["hashed_api_key"] = api_key
 
     def set_server_secret_key(self, server_secret_key: str) -> None:
