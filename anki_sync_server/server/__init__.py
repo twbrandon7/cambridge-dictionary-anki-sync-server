@@ -1,7 +1,5 @@
 import os
 
-from flask import Flask
-
 from anki_sync_server.anki.anki import Anki
 from anki_sync_server.setup.credential_storage import CredentialStorage
 from anki_sync_server.thread import ThreadWithReturnValue
@@ -16,16 +14,14 @@ if not os.path.join(CREDENTIAL_FILE_PATH):
         + "`python -m anki_sync_server setup`"
     )
 
-
-app = Flask(__name__)
+print("Loading credentials from", CREDENTIAL_FILE_PATH)
 CredentialStorage().load(CREDENTIAL_FILE_PATH)
+
+print("Creating Anki collection")
 _collection_thread = ThreadWithReturnValue(target=create_anki_collection)
 _collection_thread.start()
 collection = _collection_thread.join()
+
+print("Loading Anki wrapper")
 tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
 anki = Anki(collection, tts_service)
-
-
-@app.route("/")
-def home():
-    return {"status": "ok"}
