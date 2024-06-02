@@ -103,6 +103,6 @@ class CredentialStorage:
             pickle.dump(self._data, file)
 
     @_writer
-    def load(self, credential_name: str = ".credential") -> None:
+    def load(self, credential_name: str = ".credentials") -> None:
         with open(credential_name, "rb") as file:
             self._data = pickle.load(file)
