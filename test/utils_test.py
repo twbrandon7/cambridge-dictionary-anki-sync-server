@@ -1,6 +1,13 @@
+import os
+import tempfile
 import unittest
+import unittest.mock as mock
 
-from anki_sync_server.utils import remove_anki_cloze_tags, remove_html_tags
+from anki_sync_server.utils import (
+    create_anki_collection,
+    remove_anki_cloze_tags,
+    remove_html_tags,
+)
 
 
 class UtilsTest(unittest.TestCase):
@@ -86,6 +93,23 @@ class UtilsTest(unittest.TestCase):
             "I love Australian wines, especially the white wines.",
             remove_html_tags(text),
         )
+
+    def test_create_anki_collection_dir_not_exists(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with mock.patch("anki_sync_server.utils.Collection"):
+                data_dir = os.path.join(temp_dir, "data2")
+                self.assertFalse(os.path.exists(data_dir))
+                create_anki_collection(data_dir=data_dir)
+                self.assertTrue(os.path.exists(data_dir))
+    
+    def test_create_anki_collection_dir_not_specified(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with mock.patch("anki_sync_server.utils.Collection"):
+                with mock.patch("os.getcwd", return_value=temp_dir):
+                    data_dir = os.path.join(temp_dir, "data")
+                    self.assertFalse(os.path.exists(data_dir))
+                    create_anki_collection()
+                    self.assertTrue(os.path.exists(data_dir))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,8 @@
+import os
 import re
+
+from anki._backend import RustBackend
+from anki.collection import Collection
 
 
 def remove_anki_cloze_tags(text):
@@ -37,3 +41,14 @@ def remove_html_tags(text: str) -> str:
 
     # Use the re.sub function to replace the HTML tags with an empty string.
     return re.sub(pattern, "", text)
+
+
+def create_anki_collection(data_dir: str | None = None) -> Collection:
+    if data_dir is None:
+        data_dir = os.path.join(os.getcwd(), "data")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    return Collection(
+        os.path.join(data_dir, "collection.anki2"),
+        backend=RustBackend(langs=["en"]),
+    )

@@ -10,14 +10,7 @@ from anki_sync_server.setup.gcp_tts_setup_step import GcpTtsSetupStep
 from anki_sync_server.setup.server_api_key_setup_step import ServerApiKeySetupStep
 from anki_sync_server.setup.setup_wizard import SetupWizard
 from anki_sync_server.thread import ThreadWithReturnValue
-
-def _create_collection() -> Collection:
-    data_dir = os.path.join(os.getcwd(), "data")
-    return Collection(
-        os.path.join(data_dir, "collection.anki2"),
-        backend=RustBackend(langs=["en"]),
-    )
-
+from anki_sync_server.utils import create_anki_collection
 
 if __name__ == "__main__":
     parser = ArgumentParser()
@@ -25,7 +18,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "setup":
-        collection_thread = ThreadWithReturnValue(target=_create_collection)
+        collection_thread = ThreadWithReturnValue(target=create_anki_collection)
         collection_thread.start()
         collection = collection_thread.join()
         wizard = SetupWizard()
