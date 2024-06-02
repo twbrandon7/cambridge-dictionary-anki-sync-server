@@ -1,3 +1,5 @@
+from getpass import getpass
+
 from anki.collection import Collection
 from anki.errors import SyncError
 from anki.sync import SyncAuth
@@ -15,7 +17,7 @@ class AnkiSessionSetupStep(SetupStep):
         auth = None
         while auth is None:
             username = input("Enter your AnkiWeb username: ")
-            password = input("Enter your AnkiWeb password: ")
+            password = getpass("Enter your AnkiWeb password: ")
             try:
                 auth = self._collection.sync_login(
                     username, password, "https://sync.ankiweb.net"
