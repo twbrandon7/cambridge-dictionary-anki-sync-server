@@ -3,3 +3,4 @@ python-dotenv
 Flask
 bcrypt
 flask-restful
+marshmallow
