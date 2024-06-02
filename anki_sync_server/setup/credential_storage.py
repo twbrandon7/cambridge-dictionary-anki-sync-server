@@ -98,7 +98,7 @@ class CredentialStorage:
         self._data["server_secret_key"] = server_secret_key
 
     @_writer
-    def save(self, credential_name: str = ".credential") -> None:
+    def save(self, credential_name: str = ".credentials") -> None:
         with open(credential_name, "wb") as file:
             pickle.dump(self._data, file)
 
