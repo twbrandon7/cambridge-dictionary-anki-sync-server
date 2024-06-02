@@ -4,3 +4,4 @@ Flask
 bcrypt
 flask-restful
 marshmallow
+Flask-Cors
