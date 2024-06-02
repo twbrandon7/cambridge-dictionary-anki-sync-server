@@ -34,6 +34,7 @@ class CredentialStorage:
                 "anki_session": None,
                 "gcp_tts_api_key": None,
                 "hashed_api_key": None,
+                "server_secret_key": None,
             }
             self._initialized = True
 
@@ -80,6 +81,10 @@ class CredentialStorage:
     def get_hashed_api_key(self) -> str | None:
         return self._data.get("hashed_api_key")
 
+    @_reader
+    def get_server_secret_key(self) -> str | None:
+        return self._data.get("server_secret_key")
+
     def set_anki_session(self, session: SyncAuth) -> None:
         self._data["anki_session"] = session
 
@@ -88,6 +93,9 @@ class CredentialStorage:
 
     def set_hashed_api_key(self, api_key: str) -> None:
         self._data["hashed_api_key"] = api_key
+
+    def set_server_secret_key(self, server_secret_key: str) -> None:
+        self._data["server_secret_key"] = server_secret_key
 
     @_writer
     def save(self, credential_name: str = ".credential") -> None:

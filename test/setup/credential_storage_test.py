@@ -19,6 +19,10 @@ class CredentialStorageTest(unittest.TestCase):
     def test_get_hashed_api_key(self):
         credential_storage = CredentialStorage()
         self.assertIsNone(credential_storage.get_hashed_api_key())
+    
+    def test_get_server_secret_key(self):
+        credential_storage = CredentialStorage()
+        self.assertIsNone(credential_storage.get_server_secret_key())
 
     def test_set_anki_session(self):
         credential_storage = CredentialStorage()
@@ -34,6 +38,11 @@ class CredentialStorageTest(unittest.TestCase):
         credential_storage = CredentialStorage()
         credential_storage.set_hashed_api_key("api_key2")
         self.assertEqual("api_key2", credential_storage.get_hashed_api_key())
+    
+    def test_set_server_secret_key(self):
+        credential_storage = CredentialStorage()
+        credential_storage.set_server_secret_key("server_secret")
+        self.assertEqual("server_secret", credential_storage.get_server_secret_key())
 
     def test_save_and_load(self):
         credential_storage = CredentialStorage()
