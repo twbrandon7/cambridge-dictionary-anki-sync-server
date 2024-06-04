@@ -1,15 +1,17 @@
 import copy
 import time
 from threading import Lock
+from typing import List
 
 from anki.collection import Collection, SyncOutput, SyncStatus
 from anki.notes import Note
 
+from anki_sync_server.anki.cloze_note import ClozeNote
 from anki_sync_server.anki.media_creator import MediaCreator
 from anki_sync_server.anki.model_creator import ModelCreator
+from anki_sync_server.anki.note_creator import NoteCreator
 from anki_sync_server.setup.credential_storage import CredentialStorage
 from anki_sync_server.tts.base import TtsService
-from anki_sync_server.utils import remove_anki_cloze_tags, remove_html_tags
 
 
 class Anki:
@@ -27,50 +29,21 @@ class Anki:
         self._media_creator = MediaCreator(collection)
         self._anki_model = None
         self._tts_service = tts_service
+        self._note_creator = NoteCreator(self._media_creator, self._tts_service)
         self._auth = CredentialStorage().get_anki_session()
         self._media_sync_timeout_seconds = media_sync_timeout_seconds
 
-    def add_cloze_note(
-        self,
-        text: str,
-        text_translation: str,
-        english_definition: str,
-        definition_translation: str,
-        word: str,
-        part_of_speech: str,
-        cefr_level: str,
-        code: str,
-    ) -> Note:
+    def add_cloze_note(self, notes: List[ClozeNote]) -> Note:
         with self._lock:
             self._sync(True)
 
             if self._anki_model is None:
                 self._anki_model = self._model_creator.create_model()
 
-            text_audio_file = self._media_creator.create_media(
-                self._tts_service.generate_audio(
-                    remove_anki_cloze_tags(remove_html_tags(text))
-                ),
-                "googletts",
-                ".mp3",
-            )
-            word_audio_file = self._media_creator.create_media(
-                self._tts_service.generate_audio(word),
-                "googletts",
-                ".mp3",
-            )
-            note = self._collection.new_note(self._anki_model)
-            note["Text"] = text
-            note["TextTranslation"] = text_translation
-            note["EnDefinition"] = english_definition
-            note["DefinitionTranslation"] = definition_translation
-            note["Word"] = word
-            note["PartOfSpeech"] = part_of_speech
-            note["CefrLevel"] = cefr_level
-            note["Code"] = code
-            note["DefinitionAudio"] = "[sound:{}]".format(word_audio_file)
-            note["TextAudio"] = "[sound:{}]".format(text_audio_file)
-            self._collection.add_note(note, self._deck_id)
+            for cloze_note in notes:
+                note = self._collection.new_note(self._anki_model)
+                note = self._note_creator.convert(note, cloze_note)
+                self._collection.add_note(note, self._deck_id)
 
             self._sync()
             return note

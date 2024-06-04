@@ -17,16 +17,7 @@ class ClozeNote(Resource):
             abort(400, message=err.messages)
             return
 
-        anki.add_cloze_note(
-            text=note["englishExample"],
-            text_translation=note["exampleTranslation"],
-            english_definition=note["englishDefinition"],
-            definition_translation=note["definitionTranslation"],
-            word=note["word"],
-            part_of_speech=note["partOfSpeech"],
-            cefr_level=note["cefrLevel"],
-            code=note["code"],
-        )
+        anki.add_cloze_note([note])
 
         return {"status": "ok"}
 
