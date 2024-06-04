@@ -1,27 +1,18 @@
 from flask import Blueprint, request
 from flask_restful import Api, Resource, abort
-from marshmallow import Schema, ValidationError, fields
+from marshmallow import ValidationError
 
+from anki_sync_server.anki.cloze_note import ClozeNote as ClozeNoteScheme
 from anki_sync_server.server import anki
 
 bp = Blueprint("api_v1", __name__)
 api = Api(bp)
 
 
-class ClozeNote(Resource, Schema):
-    word = fields.Str(required=True)
-    partOfSpeech = fields.Str(required=True)
-    guideWord = fields.Str(required=True)
-    englishDefinition = fields.Str(required=True)
-    definitionTranslation = fields.Str(required=True)
-    cefrLevel = fields.Str(required=True)
-    code = fields.Str(required=True)
-    englishExample = fields.Str(required=True)
-    exampleTranslation = fields.Str(required=True)
-
+class ClozeNote(Resource):
     def post(self):
         try:
-            note = ClozeNote().load(request.json)
+            note = ClozeNoteScheme().load(request.json)
         except ValidationError as err:
             abort(400, message=err.messages)
             return
