@@ -87,7 +87,7 @@ class CredentialStorage:
         return self._data.get("server_secret_key")
 
     @_reader
-    def get_refresh_token_created_at(self) -> int | None:
+    def get_refresh_token_created_at(self) -> float | None:
         return self._data.get("refresh_token_created_at")
 
     @_writer
@@ -107,7 +107,7 @@ class CredentialStorage:
         self._data["server_secret_key"] = server_secret_key
 
     @_writer
-    def set_refresh_token_created_at(self, created_at: int) -> None:
+    def set_refresh_token_created_at(self, created_at: float | None) -> None:
         self._data["refresh_token_created_at"] = created_at
 
     @_writer

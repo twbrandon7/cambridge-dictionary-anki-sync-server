@@ -4,6 +4,7 @@ from typing import Literal, Tuple
 import jwt
 
 from anki_sync_server import APP_NAME
+from anki_sync_server.setup.credential_storage import CredentialStorage
 
 
 class TokenIssuer:
@@ -21,6 +22,9 @@ class TokenIssuer:
             "exp": expiration_datetime.timestamp(),
             "type": token_type,
         }
+        if token_type == "refresh":
+            CredentialStorage().set_refresh_token_created_at(payload["iat"])
+            CredentialStorage().save()
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
 
     def verify(
@@ -35,15 +39,26 @@ class TokenIssuer:
             Tuple[bool, str]: A tuple of a boolean indicating whether the token is
             valid and a error message
         """
+        refresh_token_created_at = CredentialStorage().get_refresh_token_created_at()
         try:
             decoded_token = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             if (
-                decoded_token.get("iss") == APP_NAME
-                and decoded_token.get("type") == token_type
+                token_type == "access"
+                and decoded_token["type"] == token_type
+                and decoded_token["iss"] == APP_NAME
             ):
                 return True, None
-            else:
-                return False, "Invalid issuer or token type"
+
+            if (
+                token_type == "refresh"
+                and decoded_token["type"] == token_type
+                and decoded_token["iss"] == APP_NAME
+                and refresh_token_created_at is not None
+                and refresh_token_created_at == decoded_token["iat"]
+            ):
+                return True, None
+
+            return False, "Invalid token"
         except jwt.ExpiredSignatureError:
             return False, "Token has expired"
         except jwt.InvalidTokenError:

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from anki_sync_server.server.token_issuer import TokenIssuer
+from anki_sync_server.setup.credential_storage import CredentialStorage
 
 
 class TestTokenIssuer(unittest.TestCase):
@@ -46,13 +47,26 @@ class TestTokenIssuer(unittest.TestCase):
         with patch("anki_sync_server.server.token_issuer.APP_NAME", "FakeApp"):
             is_valid, error = self.issuer.verify(token, "access")
             self.assertFalse(is_valid)
-            self.assertEqual(error, "Invalid issuer or token type")
+            self.assertEqual(error, "Invalid token")
 
     def test_verify_invalid_type(self):
         token = self.issuer.issue("access", self.token_ttl)
         is_valid, error = self.issuer.verify(token, "refresh")
         self.assertFalse(is_valid)
-        self.assertEqual(error, "Invalid issuer or token type")
+        self.assertEqual(error, "Invalid token")
+
+    def test_verify_refresh_token(self):
+        token = self.issuer.issue("refresh", self.token_ttl)
+        is_valid, error = self.issuer.verify(token, "refresh")
+        self.assertTrue(is_valid)
+        self.assertIsNone(error)
+
+    def test_verify_refresh_token_created_at(self):
+        token = self.issuer.issue("refresh", self.token_ttl)
+        CredentialStorage().set_refresh_token_created_at(None)
+        is_valid, error = self.issuer.verify(token, "refresh")
+        self.assertFalse(is_valid)
+        self.assertEqual(error, "Invalid token")
 
 
 if __name__ == "__main__":
