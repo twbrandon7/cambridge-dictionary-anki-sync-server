@@ -1,0 +1,38 @@
+version: "3.9"
+services:  
+  app:
+    build: ./
+    restart: always
+    volumes: 
+      - app-volume:/app/data
+    networks:
+      - anki-network
+
+  nginx:
+    container_name: nginx-proxy
+    restart: always
+    image: nginx:1.26.1-alpine3.19
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - anki-network
+    depends_on:
+      - app
+    ports:
+      - "5000:80"
+
+  tunnel:
+    container_name: cloudflared-tunnel
+    restart: always
+    build: ./docker/tunnel
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - anki-network
+
+networks:
+  anki-network:
+    name: anki-network
+
+volumes:
+  app-volume:
