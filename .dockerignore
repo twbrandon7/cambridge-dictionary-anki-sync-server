@@ -1,0 +1,11 @@
+.vscode/
+data/
+notebook/
+venv/
+.credentials
+.env
+.flake8
+.git
+.gitignore
+.isort.cfg
+__pycache__/
