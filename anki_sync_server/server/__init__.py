@@ -6,9 +6,9 @@ from anki_sync_server.thread import ThreadWithReturnValue
 from anki_sync_server.tts.google import GcpTtsService
 from anki_sync_server.utils import create_anki_collection
 
-CREDENTIAL_FILE_PATH = os.path.join(os.getcwd(), ".credentials")
+CREDENTIAL_FILE_PATH = os.path.join(os.getcwd(), "data", ".credentials")
 
-if not os.path.join(CREDENTIAL_FILE_PATH):
+if not os.path.exists(CREDENTIAL_FILE_PATH):
     raise Exception(
         "Credential file not found. Please run the setup script by running "
         + "`python -m anki_sync_server setup`"
