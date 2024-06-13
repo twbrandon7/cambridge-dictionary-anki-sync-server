@@ -24,6 +24,10 @@ class CredentialStorageTest(unittest.TestCase):
         credential_storage = CredentialStorage()
         self.assertIsNone(credential_storage.get_server_secret_key())
 
+    def test_get_refresh_token_created_at(self):
+        credential_storage = CredentialStorage()
+        self.assertIsNone(credential_storage.get_refresh_token_created_at())
+
     def test_set_anki_session(self):
         credential_storage = CredentialStorage()
         credential_storage.set_anki_session("session")
@@ -43,6 +47,11 @@ class CredentialStorageTest(unittest.TestCase):
         credential_storage = CredentialStorage()
         credential_storage.set_server_secret_key("server_secret")
         self.assertEqual("server_secret", credential_storage.get_server_secret_key())
+
+    def test_set_refresh_token_created_at(self):
+        credential_storage = CredentialStorage()
+        credential_storage.set_refresh_token_created_at(123456)
+        self.assertEqual(123456, credential_storage.get_refresh_token_created_at())
 
     def test_save_and_load(self):
         credential_storage = CredentialStorage()

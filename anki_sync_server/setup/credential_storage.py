@@ -35,6 +35,7 @@ class CredentialStorage:
                 "gcp_tts_api_key": None,
                 "hashed_api_key": None,
                 "server_secret_key": None,
+                "refresh_token_created_at": None,
             }
             self._initialized = True
 
@@ -85,17 +86,29 @@ class CredentialStorage:
     def get_server_secret_key(self) -> str | None:
         return self._data.get("server_secret_key")
 
+    @_reader
+    def get_refresh_token_created_at(self) -> int | None:
+        return self._data.get("refresh_token_created_at")
+
+    @_writer
     def set_anki_session(self, session: SyncAuth) -> None:
         self._data["anki_session"] = session
 
+    @_writer
     def set_gcp_tts_api_key(self, api_key: str) -> None:
         self._data["gcp_tts_api_key"] = api_key
 
+    @_writer
     def set_hashed_api_key(self, api_key: bytes) -> None:
         self._data["hashed_api_key"] = api_key
 
+    @_writer
     def set_server_secret_key(self, server_secret_key: str) -> None:
         self._data["server_secret_key"] = server_secret_key
+
+    @_writer
+    def set_refresh_token_created_at(self, created_at: int) -> None:
+        self._data["refresh_token_created_at"] = created_at
 
     @_writer
     def save(self, credential_name: str = ".credentials") -> None:
