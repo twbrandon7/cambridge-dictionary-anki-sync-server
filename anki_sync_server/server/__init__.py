@@ -1,12 +1,11 @@
 import os
 
+from anki_sync_server import CREDENTIAL_FILE_PATH
 from anki_sync_server.anki.anki import Anki
 from anki_sync_server.setup.credential_storage import CredentialStorage
 from anki_sync_server.thread import ThreadWithReturnValue
 from anki_sync_server.tts.google import GcpTtsService
 from anki_sync_server.utils import create_anki_collection
-
-CREDENTIAL_FILE_PATH = os.path.join(os.getcwd(), "data", ".credentials")
 
 if not os.path.exists(CREDENTIAL_FILE_PATH):
     raise Exception(

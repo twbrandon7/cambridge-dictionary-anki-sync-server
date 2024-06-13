@@ -1,9 +1,6 @@
-import os
 from argparse import ArgumentParser
 
-from anki._backend import RustBackend
-from anki.collection import Collection
-
+from anki_sync_server import CREDENTIAL_FILE_PATH
 from anki_sync_server.setup.anki_session_setup_step import AnkiSessionSetupStep
 from anki_sync_server.setup.credential_storage import CredentialStorage
 from anki_sync_server.setup.gcp_tts_setup_step import GcpTtsSetupStep
@@ -26,4 +23,4 @@ if __name__ == "__main__":
         wizard.append(GcpTtsSetupStep())
         wizard.append(ServerApiKeySetupStep())
         wizard.run_all()
-        CredentialStorage().save()
+        CredentialStorage().save(CREDENTIAL_FILE_PATH)
