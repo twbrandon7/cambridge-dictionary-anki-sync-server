@@ -1,4 +1,5 @@
 uwsgi
+pyjwt
 anki
 python-dotenv
 Flask
