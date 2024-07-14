@@ -32,6 +32,12 @@ class ClozeNote(Resource):
 api.add_resource(ClozeNote, "/clozeNotes")
 
 
+@bp.route("/health", methods=["GET"])
+@token_required
+def health():
+    return make_response(jsonify({"status": "ok"}), 200)
+
+
 # user login route
 @bp.route("/login", methods=["POST"])
 def login():
