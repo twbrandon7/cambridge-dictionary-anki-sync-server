@@ -24,7 +24,7 @@ class Anki:
     ) -> None:
         self._lock = Lock()
         self._collection = collection
-        self._deck_id = self._collection.decks.id_for_name(deck_name)
+        self._deck_id = self._collection.decks.id(deck_name)
         self._model_creator = ModelCreator(collection)
         self._media_creator = MediaCreator(collection)
         self._anki_model = None
