@@ -24,7 +24,7 @@ class Anki:
     ) -> None:
         self._lock = Lock()
         self._collection = collection
-        self._deck_id = self._collection.decks.id(deck_name)
+        self._deck_name = deck_name
         self._model_creator = ModelCreator(collection)
         self._media_creator = MediaCreator(collection)
         self._anki_model = None
@@ -36,6 +36,7 @@ class Anki:
     def add_cloze_note(self, notes: List[ClozeNote]) -> Note:
         with self._lock:
             self._sync(True)
+            deck_id = self._collection.decks.id(self._deck_name)
 
             if self._anki_model is None:
                 self._anki_model = self._model_creator.create_model()
@@ -43,7 +44,7 @@ class Anki:
             for cloze_note in notes:
                 note = self._collection.new_note(self._anki_model)
                 note = self._note_creator.convert(note, cloze_note)
-                self._collection.add_note(note, self._deck_id)
+                self._collection.add_note(note, deck_id)
 
             self._sync()
             return note
