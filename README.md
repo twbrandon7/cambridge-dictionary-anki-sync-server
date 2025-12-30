@@ -54,7 +54,7 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
 
 5. **Start the server**
    ```bash
-   uwsgi --http 0.0.0.0:5000 --master -p 4 -w anki_sync_server.server.main:app
+   uwsgi --http 0.0.0.0:5000 --master -p 4 --lazy-apps -w anki_sync_server.server.main:app
    ```
 
 ### Docker Deployment
@@ -333,7 +333,7 @@ The server automatically syncs with AnkiWeb after adding each card. Check your A
    
    # Local
    # Stop the current uwsgi process and restart
-   uwsgi --http 0.0.0.0:5000 --master -p 4 -w anki_sync_server.server.main:app
+   uwsgi --http 0.0.0.0:5000 --master -p 4 --lazy-apps -w anki_sync_server.server.main:app
    ```
 
 ### Database Management

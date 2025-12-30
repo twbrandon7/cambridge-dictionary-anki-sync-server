@@ -20,4 +20,4 @@ RUN apt-get clean && \
 
 RUN mkdir -p /app/data/
 
-CMD uwsgi --http 0.0.0.0:5000 --master -p 4 -w anki_sync_server.server.main:app
+CMD uwsgi --http 0.0.0.0:5000 --master -p 4 --lazy-apps -w anki_sync_server.server.main:app

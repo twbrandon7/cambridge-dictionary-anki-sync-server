@@ -1,4 +1,5 @@
 import os
+from threading import Lock
 
 from anki_sync_server import CREDENTIAL_FILE_PATH
 from anki_sync_server.anki.anki import Anki
@@ -16,11 +17,42 @@ if not os.path.exists(CREDENTIAL_FILE_PATH):
 print("Loading credentials from", CREDENTIAL_FILE_PATH)
 CredentialStorage().load(CREDENTIAL_FILE_PATH)
 
-print("Creating Anki collection")
-_collection_thread = ThreadWithReturnValue(target=create_anki_collection)
-_collection_thread.start()
-collection = _collection_thread.join()
+# Lazy initialization to support multi-process workers
+_anki = None
+_anki_lock = Lock()
 
-print("Loading Anki wrapper")
-tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
-anki = Anki(collection, tts_service)
+
+def _get_anki():
+    """Get or create the Anki instance (lazy initialization for multi-process support)."""
+    global _anki
+    if _anki is None:
+        with _anki_lock:
+            # Double-check locking pattern
+            if _anki is None:
+                print("Creating Anki collection")
+                _collection_thread = ThreadWithReturnValue(target=create_anki_collection)
+                _collection_thread.start()
+                collection = _collection_thread.join()
+                
+                print("Loading Anki wrapper")
+                tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
+                _anki = Anki(collection, tts_service)
+    return _anki
+
+
+# Provide a property-like access pattern for backwards compatibility
+class _AnkiProxy:
+    """Proxy object that provides lazy initialization of the Anki instance."""
+    
+    def __getattr__(self, name):
+        try:
+            anki_instance = _get_anki()
+            return getattr(anki_instance, name)
+        except AttributeError as e:
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'. "
+                f"This is a proxy for the Anki instance which also doesn't have this attribute."
+            ) from e
+
+
+anki = _AnkiProxy()
