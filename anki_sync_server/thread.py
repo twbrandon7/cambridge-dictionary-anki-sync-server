@@ -20,6 +20,9 @@ class ThreadWithReturnValue(Thread):
             try:
                 self._return = self._target(*self._args, **self._kwargs)
             except Exception as e:
+                # Store exception to propagate to join()
+                # Note: KeyboardInterrupt and SystemExit inherit from BaseException,
+                # not Exception, so they will not be caught here
                 self._exception = e
 
     def join(self, *args):

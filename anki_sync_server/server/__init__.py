@@ -36,13 +36,17 @@ def _get_anki():
                     collection = _collection_thread.join()
                     
                     if collection is None:
-                        raise Exception("Failed to create Anki collection: collection is None")
+                        raise Exception(
+                            "Failed to create Anki collection: collection is None. "
+                            "This may indicate a database error or the collection is already open in another process."
+                        )
                     
                     print("Loading Anki wrapper")
                     tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
                     _anki = Anki(collection, tts_service)
                 except Exception as e:
                     print(f"Error initializing Anki: {e}")
+                    print("Check that the Anki database is not open in another process and is not corrupted.")
                     raise
     return _anki
 
