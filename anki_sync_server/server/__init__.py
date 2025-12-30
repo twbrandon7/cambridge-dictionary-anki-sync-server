@@ -45,7 +45,14 @@ class _AnkiProxy:
     """Proxy object that provides lazy initialization of the Anki instance."""
     
     def __getattr__(self, name):
-        return getattr(_get_anki(), name)
+        try:
+            anki_instance = _get_anki()
+            return getattr(anki_instance, name)
+        except AttributeError as e:
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'. "
+                f"This is a proxy for the Anki instance which also doesn't have this attribute."
+            ) from e
 
 
 anki = _AnkiProxy()

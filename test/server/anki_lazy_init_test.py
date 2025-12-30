@@ -138,6 +138,48 @@ class AnkiLazyInitializationTest(unittest.TestCase):
         mock_create_collection.assert_called_once()
         mock_anki_cls.assert_called_once()
 
+    @mock.patch('anki_sync_server.server.create_anki_collection')
+    @mock.patch('anki_sync_server.server.GcpTtsService')
+    @mock.patch('anki_sync_server.server.Anki')
+    @mock.patch('anki_sync_server.server.CredentialStorage')
+    def test_proxy_attribute_error_handling(
+        self, mock_creds, mock_anki_cls, mock_tts, mock_create_collection
+    ):
+        """Test that proxy provides helpful error messages for missing attributes."""
+        # Import after patches are in place
+        import anki_sync_server.server as server_module
+        
+        # Reset the global state
+        server_module._anki = None
+        
+        # Mock credentials
+        mock_creds_instance = mock.Mock()
+        mock_creds_instance.get_gcp_tts_api_key.return_value = "test_key"
+        mock_creds.return_value = mock_creds_instance
+        
+        # Mock collection creation
+        mock_collection = mock.Mock()
+        mock_create_collection.return_value = mock_collection
+        
+        # Mock TTS service
+        mock_tts_instance = mock.Mock()
+        mock_tts.return_value = mock_tts_instance
+        
+        # Mock Anki instance without the attribute
+        mock_anki_instance = mock.Mock(spec=['add_cloze_note'])
+        mock_anki_cls.return_value = mock_anki_instance
+        
+        # Create proxy
+        proxy = server_module._AnkiProxy()
+        
+        # Try to access a non-existent attribute
+        with self.assertRaises(AttributeError) as context:
+            _ = proxy.non_existent_method
+        
+        # Verify the error message is helpful
+        self.assertIn("_AnkiProxy", str(context.exception))
+        self.assertIn("non_existent_method", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
