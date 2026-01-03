@@ -11,7 +11,7 @@ services:
   celery_worker:
     build: ./
     restart: always
-    command: celery -A anki_sync_server.tasks.celery_app worker --loglevel=info --concurrency=1
+    command: uv run celery -A anki_sync_server.tasks.celery_app worker --loglevel=info --concurrency=1
     volumes:
       - app-volume:/app/data
     networks:

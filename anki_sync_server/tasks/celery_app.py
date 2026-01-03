@@ -26,3 +26,6 @@ celery_app.conf.update(
     task_time_limit=int(os.getenv("CELERY_TASK_TIME_LIMIT", "300")),
     result_expires=int(os.getenv("CELERY_RESULT_EXPIRES", "86400")),
 )
+
+# Import tasks to register them with Celery
+from anki_sync_server.tasks import card_creation_task  # noqa: E402, F401
