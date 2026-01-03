@@ -1,10 +1,8 @@
-# Specification: Task Status Tracking
+# task-status-tracking Specification
 
-## Overview
-API and persistent storage for querying the status of asynchronous card creation tasks. Provides real-time visibility into task progress (pending, started, completed) and error details.
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change add-celery-background-worker. Update Purpose after archive.
+## Requirements
 ### Requirement: Task Status Endpoint
 The system MUST provide a new HTTP GET endpoint to query task status and retrieve results.
 
@@ -212,3 +210,4 @@ Then the client should poll with exponential backoff:
 - Max interval: 30 seconds
 - Multiplier: 2x per attempt
 To reduce server load and API calls.
+

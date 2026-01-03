@@ -1,10 +1,8 @@
-# Specification: Async Card Creation
+# async-card-creation Specification
 
-## Overview
-Background asynchronous processing of Anki card creation requests via Celery task queue. Decouples API request from long-running operations (media generation, AnkiWeb sync).
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change add-celery-background-worker. Update Purpose after archive.
+## Requirements
 ### Requirement: Celery Task for Card Creation
 The system SHALL encapsulate the full card creation workflow (validation, note creation, media generation, AnkiWeb sync) as a Celery task executable in background worker processes.
 
@@ -139,3 +137,4 @@ Given a request without valid authentication token
 When the `@token_required` decorator is checked
 Then HTTP 401 Unauthorized or 403 Forbidden is returned (unchanged behavior)
 And no task is created
+
