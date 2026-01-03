@@ -6,6 +6,7 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
 
 - **Automatic Anki Card Creation**: Creates custom cloze cards with Cambridge Dictionary data
 - **AnkiWeb Synchronization**: Automatically syncs cards to your AnkiWeb account
+- **Asynchronous Card Creation**: Background task processing for non-blocking API responses
 - **Text-to-Speech Integration**: Generates audio pronunciations using Google Cloud TTS
 - **REST API**: Easy-to-use HTTP endpoints for adding vocabulary
 - **Token-based Authentication**: Secure API access with JWT tokens
@@ -189,11 +190,11 @@ Authorization: Bearer <access_token>
 
 ---
 
-#### 5. Create Cloze Note
+#### 5. Create Cloze Note (Async)
 
 **POST** `/api/v1/clozeNotes`
 
-Creates a new cloze deletion flashcard and syncs it to AnkiWeb.
+Creates a new cloze deletion flashcard asynchronously. Returns immediately with a task ID for polling.
 
 **Headers:**
 ```
@@ -216,34 +217,139 @@ Content-Type: application/json
 }
 ```
 
-**Field Descriptions:**
-- `word` (required): The vocabulary word
-- `partOfSpeech` (required): Part of speech (e.g., noun, verb, adjective)
-- `guideWord` (required): Brief guide or context for the word
-- `englishDefinition` (required): Full English definition
-- `definitionTranslation` (required): Translation of the definition
-- `cefrLevel` (required): CEFR level (A1, A2, B1, B2, C1, C2)
-- `code` (required): Language/region code (e.g., US, UK)
-- `englishExample` (required): Example sentence with cloze deletion markers `{{c1::word}}`
-- `exampleTranslation` (required): Translation of the example sentence
+**Response (202 Accepted):**
+```json
+{
+  "taskId": "abc123def456",
+  "status": "pending",
+  "statusUrl": "/api/v1/tasks/abc123def456",
+  "createdAt": "2026-01-03T10:30:00Z"
+}
+```
 
-**Response:**
+**Query Parameters:**
+- `async` (optional, default: `true`): Set to `false` to use synchronous mode (legacy behavior)
+
+**Synchronous Mode (Legacy):**
+```bash
+curl -X POST http://localhost:5000/api/v1/clozeNotes?async=false \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{...note_data...}'
+```
+
+Response (200 OK):
 ```json
 {
   "status": "ok"
 }
 ```
 
-**Error Response (400 Bad Request):**
+---
+
+#### 6. Get Task Status
+
+**GET** `/api/v1/tasks/<task_id>`
+
+Fetch the status of an async card creation task.
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK) - Pending:**
 ```json
 {
-  "message": {
-    "field_name": ["Error message"]
+  "taskId": "abc123def456",
+  "status": "pending",
+  "createdAt": "2026-01-03T10:30:00Z",
+  "completedAt": null,
+  "progress": {
+    "current": 0,
+    "total": 1
+  },
+  "result": null,
+  "error": null
+}
+```
+
+**Response (200 OK) - Completed Successfully:**
+```json
+{
+  "taskId": "abc123def456",
+  "status": "success",
+  "createdAt": "2026-01-03T10:30:00Z",
+  "completedAt": "2026-01-03T10:31:15Z",
+  "progress": {
+    "current": 1,
+    "total": 1
+  },
+  "result": {
+    "noteId": 123456,
+    "cardId": 789012
+  },
+  "error": null
+}
+```
+
+**Response (200 OK) - Failed:**
+```json
+{
+  "taskId": "abc123def456",
+  "status": "failure",
+  "createdAt": "2026-01-03T10:30:00Z",
+  "completedAt": "2026-01-03T10:31:15Z",
+  "progress": {
+    "current": 0,
+    "total": 1
+  },
+  "result": null,
+  "error": {
+    "type": "ValidationError",
+    "message": "Missing required field: example"
   }
 }
 ```
 
-## Card Template
+**Response (404 Not Found):**
+```json
+{
+  "message": "Task abc123def456 not found"
+}
+```
+
+---
+
+#### 7. Async Workflow Example
+
+```bash
+# 1. Create a cloze note (returns immediately with task ID)
+RESPONSE=$(curl -X POST http://localhost:5000/api/v1/clozeNotes \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{...note_data...}')
+
+TASK_ID=$(echo $RESPONSE | jq -r '.taskId')
+
+# 2. Poll task status until completion
+while true; do
+  STATUS=$(curl -s http://localhost:5000/api/v1/tasks/$TASK_ID \
+    -H "Authorization: Bearer <access_token>" | jq -r '.status')
+  
+  if [ "$STATUS" = "success" ] || [ "$STATUS" = "failure" ]; then
+    echo "Task completed with status: $STATUS"
+    break
+  fi
+  
+  echo "Task still pending..."
+  sleep 2
+done
+```
+
+---
+
+#### 8. Refresh Token
 
 The server creates custom Anki cards with the following features:
 
@@ -262,6 +368,54 @@ All server data is stored in the `data/` directory:
 - Anki collection database and media files
 
 **Important**: Backup the `data/` directory regularly to prevent data loss.
+
+### Celery Background Worker
+
+The server uses Celery for asynchronous card creation with SQLite as the message broker. This allows the API to return immediately without waiting for card creation, TTS generation, and AnkiWeb sync to complete.
+
+#### Background Worker Configuration
+
+**Environment Variables:**
+```bash
+CELERY_BROKER_URL=sqla+sqlite:///data/celery_broker.db
+CELERY_RESULT_BACKEND=db+sqlite:///data/celery_results.db
+CELERY_WORKER_CONCURRENCY=1  # Single-threaded for SQLite compatibility
+CELERY_TASK_TIME_LIMIT=300   # 5-minute timeout per task
+CELERY_RESULT_EXPIRES=86400  # 24-hour result retention
+```
+
+#### Managing the Worker
+
+**Docker Compose:**
+```bash
+# Start all services (Flask API + Celery worker)
+docker-compose up -d
+
+# View worker logs
+docker-compose logs -f celery_worker
+
+# Stop the worker
+docker-compose stop celery_worker
+```
+
+**Local Development:**
+```bash
+# Terminal 1: Start Flask API
+python -m anki_sync_server
+
+# Terminal 2: Start Celery worker
+celery -A anki_sync_server.tasks.celery_app worker --loglevel=info --concurrency=1
+```
+
+#### Task Status Polling
+
+Tasks are stored in SQLite with automatic cleanup after 24 hours. Use the task status endpoint to monitor progress:
+
+```bash
+# Get task status
+curl -H "Authorization: Bearer <access_token>" \
+  http://localhost:5000/api/v1/tasks/<task_id>
+```
 
 ### Updating Credentials
 
@@ -287,6 +441,13 @@ docker-compose logs -f app
 **Local:**
 Check the console output where uwsgi is running.
 
+#### Check Celery Worker Logs
+
+**Docker:**
+```bash
+docker-compose logs -f celery_worker
+```
+
 #### Check AnkiWeb Sync Status
 
 The server automatically syncs with AnkiWeb after adding each card. Check your Anki client to verify cards are syncing correctly.
@@ -298,6 +459,12 @@ The server automatically syncs with AnkiWeb after adding each card. Check your A
 - Verify the API key is correct
 - Check if the access token has expired (refresh after 1 hour)
 - Ensure the `.credentials` file exists in the `data/` directory
+
+#### Task Status Not Updating
+
+- Verify the Celery worker is running: `docker-compose ps celery_worker`
+- Check worker logs for errors: `docker-compose logs celery_worker`
+- Ensure SQLite database files exist: `ls -la data/celery_*.db`
 
 #### Sync Failures
 

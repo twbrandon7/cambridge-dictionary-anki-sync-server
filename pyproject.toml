@@ -7,11 +7,14 @@ requires-python = ">=3.11"
 dependencies = [
     "anki<25",
     "bcrypt>=5.0.0",
+    "celery>=5.3.0",
     "flask>=3.1.2",
     "flask-cors>=6.0.2",
     "flask-restful>=0.3.10",
+    "kombu>=5.3.0",
     "marshmallow>=4.1.2",
     "pyjwt>=2.10.1",
     "python-dotenv>=1.2.1",
+    "sqlalchemy>=2.0.0",
     "uwsgi>=2.0.31",
 ]

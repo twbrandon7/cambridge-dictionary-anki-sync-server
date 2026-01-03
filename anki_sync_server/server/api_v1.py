@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from flask import Blueprint, jsonify, make_response, request
@@ -8,8 +8,10 @@ from marshmallow import ValidationError
 from anki_sync_server.anki.cloze_note import ClozeNote as ClozeNoteScheme
 from anki_sync_server.server import anki
 from anki_sync_server.server.authentication import token_required
+from anki_sync_server.server.task_status import TaskStatus
 from anki_sync_server.server.token_issuer import TokenIssuer
 from anki_sync_server.setup.credential_storage import CredentialStorage
+from anki_sync_server.tasks.card_creation_task import add_cloze_note_task
 
 bp = Blueprint("api_v1", __name__)
 api = Api(bp)
@@ -24,12 +26,41 @@ class ClozeNote(Resource):
             abort(400, message=err.messages)
             return
 
-        anki.add_cloze_note([note])
+        # Check if synchronous mode is requested
+        async_mode = request.args.get("async", "true").lower() == "true"
 
-        return {"status": "ok"}
+        if not async_mode:
+            # Legacy synchronous mode
+            anki.add_cloze_note([note])
+            return {"status": "ok"}
+
+        # Asynchronous mode: queue task and return task ID
+        task = add_cloze_note_task.delay(ClozeNoteScheme().dump(note))
+
+        return {
+            "taskId": task.id,
+            "status": "pending",
+            "statusUrl": f"/api/v1/tasks/{task.id}",
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+        }, 202
 
 
 api.add_resource(ClozeNote, "/clozeNotes")
+
+
+class TaskStatusResource(Resource):
+    @token_required
+    def get(self, task_id):
+        """Get status of an async task."""
+        task_status = TaskStatus.get_task_status(task_id)
+
+        if task_status is None:
+            abort(404, message=f"Task {task_id} not found")
+
+        return task_status
+
+
+api.add_resource(TaskStatusResource, "/tasks/<task_id>")
 
 
 @bp.route("/health", methods=["GET"])

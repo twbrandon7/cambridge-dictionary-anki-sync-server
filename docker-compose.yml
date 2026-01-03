@@ -8,6 +8,23 @@ services:
     networks:
       - anki-network
 
+  celery_worker:
+    build: ./
+    restart: always
+    command: celery -A anki_sync_server.tasks.celery_app worker --loglevel=info --concurrency=1
+    volumes:
+      - app-volume:/app/data
+    networks:
+      - anki-network
+    depends_on:
+      - app
+    environment:
+      - CELERY_BROKER_URL=sqla+sqlite:///data/celery_broker.db
+      - CELERY_RESULT_BACKEND=db+sqlite:///data/celery_results.db
+      - CELERY_WORKER_CONCURRENCY=1
+      - CELERY_TASK_TIME_LIMIT=300
+      - CELERY_RESULT_EXPIRES=86400
+
   nginx:
     container_name: nginx-proxy
     restart: always
