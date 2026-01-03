@@ -26,14 +26,14 @@ And media (audio) is generated via TTS
 And the card is added to the Anki collection
 And AnkiWeb synchronization occurs
 And the task status transitions to `SUCCESS`
-And the result (card ID, note ID) is stored in Redis
+And the result (card ID, note ID) is stored in SQLite
 
 #### Scenario: Card creation fails with recoverable error
 Given a queued task with valid input
 When the task encounters an Anki lock contention or transient network error
 Then the task auto-retries with exponential backoff (max 3 attempts)
 And if all retries fail, task status is `FAILURE`
-And error details are logged and stored in Redis
+And error details are logged and stored in SQLite
 
 #### Scenario: Card creation fails with validation error
 Given an invalid note request (e.g., missing required field)

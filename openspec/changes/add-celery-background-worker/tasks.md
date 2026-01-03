@@ -85,8 +85,8 @@
   - Update `README.md` with Async Card Creation section
   - Document task status endpoint and query parameters
   - Add example curl commands for both sync and async workflows
-  - Document environment variables for Redis/Celery config
-  - Add Docker Compose usage notes for Redis and worker services
+  - Document environment variables for SQLite/Celery config
+  - Add Docker Compose usage notes for Celery worker service
 
 - [ ] **Task 13: Run validation and testing**
   - Run `openspec validate add-celery-background-worker --strict` to verify spec syntax
@@ -101,7 +101,8 @@
   - Test with legacy clients expecting synchronous response
 
 ## Notes
-- Tasks are designed to be completed sequentially but many can be parallelized (1-4, 7-9 can run in parallel; 5-6 depend on 1-4)
-- Comprehensive testing (10-11) should happen after core implementation (1-9)
-- Documentation (12) can be done alongside implementation
-- Validation (13) happens before handoff to users
+- **Dependency Verification**: Task 1 includes Celery and SQLAlchemy. Kombu (AMQP library) is included with Celery by default; verify if explicit inclusion is needed for SQLite backend during implementation
+- **Task Sequencing**: Tasks 1-4, 7-9 can run in parallel; Tasks 5-6 depend on 1-4; comprehensive testing (10-11) happens after implementation
+- **Documentation**: Task 12 references SQLite/Celery (not Redis). Update references to state naming convention (lowercase in API, uppercase internally)
+- **Media Sync Integration**: During Task 3 implementation, verify interaction between Celery task timeout (300s) and existing Anki media_sync_timeout_seconds parameter
+- **Concurrency**: Task 9 sets concurrency=1 for SQLite safety. Future scaling notes added to design.md for reference

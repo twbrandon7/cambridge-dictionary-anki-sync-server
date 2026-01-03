@@ -43,7 +43,7 @@ Implement Celery for asynchronous task processing with:
 
 2. **Server Infrastructure** (`anki_sync_server/server/main.py`)
    - Initialize Celery app and task consumers in main
-   - Configure Redis broker connectivity
+   - Configure SQLite broker connectivity
 
 ### New Dependencies
 - `celery>=5.3.0` — distributed task queue
@@ -67,8 +67,8 @@ See `tasks.md` for step-by-step checklist.
 ## Open Questions / Clarifications Needed
 - Should we retain synchronous fallback mode, or make async-only? (Proposal assumes backward-compatible option)
 - What should be the default timeout for card creation tasks? (Proposal: 300 seconds)
-- Should task results be stored in Redis or a separate database? (Proposal: Redis for simplicity)
 - Should completed tasks be auto-cleaned? If so, how long to retain? (Proposal: 24 hours)
+- Can Celery worker concurrency be increased beyond 1 with SQLite + WAL mode?
 
 ## Related Work
 - See `design.md` for architectural details on Celery integration and task isolation

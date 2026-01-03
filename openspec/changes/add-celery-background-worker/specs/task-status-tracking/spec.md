@@ -124,7 +124,7 @@ Then HTTP 401 Unauthorized is returned
 And the endpoint is protected by `@token_required` decorator
 
 ### Requirement: Task Result Storage
-Task status and results MUST be persistently stored in Redis with automatic expiration.
+Task status and results MUST be persistently stored in SQLite with automatic expiration.
 
 #### Scenario: Store task metadata in SQLite
 Given a Celery task execution
@@ -151,7 +151,7 @@ Then HTTP 200 OK is returned with current status and result
 And the task remains in SQLite database until 24-hour expiration
 
 ### Requirement: Task Status Serialization
-Task state MUST be serialized to JSON for API responses and Redis storage.
+Task state MUST be serialized to JSON for API responses and SQLite storage.
 
 #### Scenario: Serialize task state to JSON
 Given a Celery task with:
@@ -216,13 +216,13 @@ To reduce server load and API calls.
 ## Non-Functional Requirements
 
 ### Availability
-The task status endpoint is always available (assuming Redis is reachable) and does not block on Celery worker availability.
+The task status endpoint is always available (assuming SQLite database is accessible) and does not block on Celery worker availability.
 
 ### Performance
-Task status queries should complete in <10ms (Redis lookup only, no computation).
+Task status queries should complete in <10ms (SQLite lookup only, no computation).
 
 ### Data Retention
-Task results are retained for 24 hours; older tasks are automatically expired and removed from Redis.
+Task results are retained for 24 hours; older tasks are automatically expired and removed from SQLite.
 
 ### Consistency
-Task status and results are consistent with Celery's internal task state; Redis is the source of truth for API responses.
+Task status and results are consistent with Celery's internal task state; SQLite is the source of truth for API responses.

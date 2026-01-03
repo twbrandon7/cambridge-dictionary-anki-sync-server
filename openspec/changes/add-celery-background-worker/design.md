@@ -39,7 +39,7 @@ def add_cloze_note_task(self, note_data, user_id=None):
 
 **Task State Machine**:
 - `PENDING` → `STARTED` → `SUCCESS` or `FAILURE`
-- Task ID persisted in Redis with metadata (user, timestamp, errors)
+- Task ID persisted in SQLite with metadata (user, timestamp, errors)
 
 ### 3. API Endpoints
 
@@ -166,13 +166,34 @@ CELERY_TASK_TIME_LIMIT=300
 
 ## Thread Safety & Concurrency
 - **Anki Lock**: Existing `Anki._lock` remains; protects collection during card creation
-- **Celery Workers**: Multiple workers share Redis broker; no cross-worker contention for Anki operations
+- **Celery Workers**: Multiple workers share SQLite broker (serialized via file locking); Anki lock ensures no concurrent Anki operations
 - **Collection Access**: Each worker accesses the same SQLite collection file; Anki SDK's write-ahead logging (WAL) handles concurrent reads
 
 ## Testing Strategy
 1. **Unit Tests**: Mock Celery tasks; verify task enqueuing and result storage
-2. **Integration Tests**: Real Celery + Redis; verify end-to-end workflow
+2. **Integration Tests**: Real Celery + SQLite; verify end-to-end workflow
 3. **Load Tests**: Multiple concurrent requests; verify queue processing and no race conditions
+
+## Implementation Notes
+
+### Task State Naming Convention
+- **Internal Celery States**: Use uppercase (PENDING, STARTED, SUCCESS, FAILURE) as per Celery's standard
+- **API Response States**: Use lowercase ("pending", "started", "success", "failure") for JSON consistency
+- **Conversion Layer**: `task_status.py` handles conversion between Celery uppercase and API lowercase
+
+### Concurrency & SQLite Constraints
+- **Current Concurrency=1**: Chosen to ensure thread-safe SQLite access without WAL complexity
+- **Future Scaling**: If concurrency needs to increase:
+  - Enable SQLite WAL (Write-Ahead Logging) mode
+  - Use connection pooling with proper isolation levels
+  - Consider separate database for broker vs. results for better performance
+  - Monitor lock contention under load
+
+### Media Sync Timeout Integration
+- Existing `Anki` class parameter `media_sync_timeout_seconds` is independent of Celery task timeout
+- Celery `CELERY_TASK_TIME_LIMIT=300s` acts as upper bound
+- If media sync timeout exceeds Celery timeout, task will be terminated; handle in error recovery
+- Document interaction in implementation tasks
 
 ## Future Enhancements
 - WebSocket support for real-time task status updates
