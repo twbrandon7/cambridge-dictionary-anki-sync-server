@@ -4,7 +4,8 @@
 Cambridge Dictionary Anki Sync Server is a Flask-based REST API that automatically creates and syncs Anki flashcards with vocabulary from the Cambridge Dictionary. The server integrates with AnkiWeb to create custom cloze deletion cards enriched with definitions, translations, audio pronunciations (via Google Cloud TTS), and CEFR proficiency levels. It's designed to streamline vocabulary learning by automating the flashcard creation pipeline.
 
 ## Tech Stack
-- **Language**: Python 3.10+
+- **Language**: Python 3.11+
+- **Package Manager**: uv (fast Python package manager with lock file support)
 - **Web Framework**: Flask with Flask-RESTful, Flask-CORS
 - **Authentication**: JWT tokens (PyJWT for encoding/decoding)
 - **Anki Integration**: Anki SDK for direct collection manipulation and AnkiWeb sync
@@ -83,7 +84,8 @@ Cambridge Dictionary Anki Sync Server is a Flask-based REST API that automatical
 - **Protected Endpoints**: All other `/api/v1/*` endpoints require valid Bearer token
 
 ## Important Constraints
-- **Python Version**: 3.10+ required
+- **Python Version**: 3.11+ required
+- **Package Manager**: uv required for dependency management (installed via `curl https://astral.sh/uv/install.sh | sh`)
 - **AnkiWeb Credentials**: Must be valid and available during server setup (cannot add credentials after initial setup)
 - **GCP API Key**: Required for audio generation; needs Google Cloud TTS API enabled
 - **Concurrency**: Anki operations are protected by locks to prevent race conditions during sync

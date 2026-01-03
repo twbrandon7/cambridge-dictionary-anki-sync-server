@@ -14,10 +14,11 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
 
 ## Prerequisites
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - AnkiWeb account
 - Google Cloud Text-to-Speech API key (for audio generation)
 - Docker and Docker Compose (for containerized deployment)
+- uv (Python package manager) - [Installation Guide](https://docs.astral.sh/uv/getting-started/)
 
 ## Installation
 
@@ -29,15 +30,16 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
    cd cambridge-dictionary-anki-sync-server
    ```
 
-2. **Create a virtual environment**
+2. **Install dependencies**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   uv sync
    ```
+   
+   This will create a virtual environment and install all dependencies from `pyproject.toml`.
 
-3. **Install dependencies**
+3. **Activate the virtual environment**
    ```bash
-   pip install -r requirements.txt
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 4. **Run the setup wizard**

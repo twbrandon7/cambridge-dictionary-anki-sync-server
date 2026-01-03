@@ -1,0 +1,17 @@
+[project]
+name = "anki-sync-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anki<25",
+    "bcrypt>=5.0.0",
+    "flask>=3.1.2",
+    "flask-cors>=6.0.2",
+    "flask-restful>=0.3.10",
+    "marshmallow>=4.1.2",
+    "pyjwt>=2.10.1",
+    "python-dotenv>=1.2.1",
+    "uwsgi>=2.0.31",
+]

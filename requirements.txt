@@ -1,9 +1,0 @@
-uwsgi
-pyjwt
-anki
-python-dotenv
-Flask
-bcrypt
-flask-restful
-marshmallow
-Flask-Cors
