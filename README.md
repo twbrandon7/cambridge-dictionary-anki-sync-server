@@ -5,6 +5,7 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
 ## Features
 
 - **Automatic Anki Card Creation**: Creates custom cloze cards with Cambridge Dictionary data
+- **Model Context Protocol (MCP)**: Create flashcards directly from LLMs (Cursor, Claude Desktop, Windsurf) using the `/mcp` Streamable HTTP endpoint
 - **AnkiWeb Synchronization**: Automatically syncs cards to your AnkiWeb account
 - **Asynchronous Card Creation**: Background task processing for non-blocking API responses
 - **Text-to-Speech Integration**: Generates audio pronunciations using Google Cloud TTS
@@ -57,7 +58,7 @@ A Flask-based API server that automatically creates and syncs Anki flashcards wi
 
 5. **Start the server**
    ```bash
-   uwsgi --http 0.0.0.0:5000 --master -p 4 --lazy-apps -w anki_sync_server.server.main:app
+   uv run uvicorn anki_sync_server.server.main:app --host 0.0.0.0 --port 5000
    ```
 
 ### Docker Deployment
@@ -357,6 +358,80 @@ The server creates custom Anki cards with the following features:
 - **Back**: Full answer with word details, part of speech, CEFR level, code, and audio
 - **Audio**: Automatically generated TTS audio for both the word and example sentence
 - **Styling**: Custom CSS matching Cambridge Dictionary design
+
+## Model Context Protocol (MCP) Server
+
+The server natively exposes an MCP endpoint using the **Streamable HTTP** transport at `/mcp`. This allows AI assistants and LLMs (such as Cursor, Claude Desktop, Windsurf, or Open WebUI) to generate and add cloze flashcards directly to your Anki collection.
+
+### MCP Endpoint
+- **URL**: `http://localhost:5000/mcp` (or your public/tunnel domain)
+- **Transport**: Streamable HTTP
+
+### Authentication
+MCP requests authenticate using your **Server API Key** (generated during `setup`):
+- Via header: `Authorization: Bearer <your_server_api_key>` or `X-API-Key: <your_server_api_key>`
+- Via query parameter: `http://localhost:5000/mcp?api_key=<your_server_api_key>`
+
+Unlike short-lived JWT tokens, your Server API Key does not expire, ensuring uninterrupted operation in long-lived MCP clients.
+
+### Available MCP Tools
+
+1. **`create_flashcard`**:
+   - Enqueues a flashcard creation background task and returns the `taskId` immediately.
+   - **Arguments**:
+     - `word` (string, required): The target vocabulary word (e.g., `"extraordinary"`).
+     - `english_example` (string, required): Example sentence. If cloze markup `{{c1::...}}` is omitted, the tool automatically wraps the word in `{{c1::word}}`.
+     - `english_definition` (string, required): English definition.
+     - `part_of_speech` (string, optional): e.g., `"adjective"`, `"noun"`. Defaults to `""`.
+     - `definition_translation` (string, optional): Translation of the definition. Defaults to `""`.
+     - `example_translation` (string, optional): Translation of the example sentence. Defaults to `""`.
+     - `guide_word` (string, optional): Cambridge guide word. Defaults to `""`.
+     - `cefr_level` (string, optional): CEFR proficiency level (e.g. `"B2"`). Defaults to `""`.
+     - `code` (string, optional): Variety code (e.g. `"UK"` or `"US"`). Defaults to `""`.
+   - **Returns**: `{"taskId": "...", "status": "pending", "statusUrl": "...", "createdAt": "..."}`.
+
+2. **`get_task_status`**:
+   - Checks the processing state of an asynchronous card creation task.
+   - **Arguments**: `task_id` (string, required).
+   - **Returns**: `{"taskId": "...", "status": "pending" | "started" | "success" | "failure", "result": ...}`.
+
+3. **`check_health`**:
+   - Verifies server connectivity and status.
+
+### Available MCP Prompts
+
+- **`create_vocabulary_card`**:
+  - Guides the LLM in reading highlighted text or context, identifying vocabulary, and formatting the arguments required by `create_flashcard`.
+
+### Client Configuration Examples
+
+#### Cursor (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "anki": {
+      "url": "http://localhost:5000/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_SERVER_API_KEY>"
+      }
+    }
+  }
+}
+```
+
+#### Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "anki": {
+      "url": "http://localhost:5000/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_SERVER_API_KEY>"
+      }
+    }
+  }
+}
+```
 
 ## Maintenance Guide
 
