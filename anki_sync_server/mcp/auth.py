@@ -4,14 +4,17 @@ from typing import Callable, Optional, Set
 import bcrypt
 from starlette.responses import JSONResponse
 
+from anki_sync_server.mcp.oauth import verify_jwt_token
 from anki_sync_server.setup.credential_storage import CredentialStorage
 
 
 class ApiKeyAuthMiddleware:
     """
-    ASGI middleware that validates requests against the server's hashed API key.
-    Supports API keys via:
-    - Authorization: Bearer <key>
+    ASGI middleware that validates requests against either:
+    1. A valid OAuth 2.0 Bearer JWT access token
+    2. The server's hashed API key
+    Supports credentials via:
+    - Authorization: Bearer <token_or_key>
     - Authorization: <key>
     - X-API-Key: <key>
     - Query parameter: ?api_key=<key> or ?key=<key>
@@ -28,7 +31,7 @@ class ApiKeyAuthMiddleware:
         )
         self._valid_keys_cache: Set[str] = set()
 
-    def _extract_api_key(self, scope: dict) -> Optional[str]:
+    def _extract_credential(self, scope: dict) -> Optional[str]:
         headers = dict(scope.get("headers", []))
 
         auth_header = headers.get(b"authorization", b"").decode("utf-8").strip()
@@ -51,10 +54,16 @@ class ApiKeyAuthMiddleware:
 
         return None
 
-    def _verify_key(self, api_key: str) -> bool:
-        if api_key in self._valid_keys_cache:
+    def _verify_credential(self, token_or_key: str) -> bool:
+        if token_or_key in self._valid_keys_cache:
             return True
 
+        # 1. Attempt OAuth 2.0 Bearer JWT validation
+        decoded = verify_jwt_token(token_or_key, expected_type="access")
+        if decoded is not None:
+            return True
+
+        # 2. Attempt API Key hash validation
         storage = self._credential_storage_getter()
         hashed = storage.get_hashed_api_key()
         if not hashed:
@@ -64,8 +73,8 @@ class ApiKeyAuthMiddleware:
             hashed = hashed.encode("utf-8")
 
         try:
-            if bcrypt.checkpw(api_key.encode("utf-8"), hashed):
-                self._valid_keys_cache.add(api_key)
+            if bcrypt.checkpw(token_or_key.encode("utf-8"), hashed):
+                self._valid_keys_cache.add(token_or_key)
                 return True
         except Exception:
             return False
@@ -82,14 +91,15 @@ class ApiKeyAuthMiddleware:
             await self.app(scope, receive, send)
             return
 
-        api_key = self._extract_api_key(scope)
-        if not api_key or not self._verify_key(api_key):
+        credential = self._extract_credential(scope)
+        if not credential or not self._verify_credential(credential):
             response = JSONResponse(
                 {
-                    "error": "Unauthorized",
-                    "message": "Invalid or missing Server API key",
+                    "error": "unauthorized",
+                    "message": "Invalid or missing Server API key or Bearer token",
                 },
                 status_code=401,
+                headers={"WWW-Authenticate": 'Bearer realm="mcp", error="invalid_token"'},
             )
             await response(scope, receive, send)
             return

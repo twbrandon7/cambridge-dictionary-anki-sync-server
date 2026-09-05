@@ -2,6 +2,7 @@ from a2wsgi import WSGIMiddleware
 from flask import Flask
 from flask_cors import CORS
 
+from anki_sync_server.mcp.oauth import create_oauth_app
 from anki_sync_server.mcp.server import create_mcp_app
 from anki_sync_server.server.api_v1 import bp
 from anki_sync_server.tasks.celery_app import celery_app
@@ -24,23 +25,28 @@ flask_app.register_blueprint(bp, url_prefix="/api/v1")
 # 2. MCP application (ASGI Streamable HTTP)
 mcp_app = create_mcp_app(auth_middleware=True)
 
+# 3. OAuth 2.0 application (ASGI)
+oauth_app = create_oauth_app()
 
-# 3. Composite application supporting both ASGI (Uvicorn) and WSGI (legacy/tests)
+
+# 4. Composite application supporting both ASGI (Uvicorn) and WSGI (legacy/tests)
 class CompositeApp:
     """
     Unified application supporting both ASGI and WSGI:
     - In ASGI (scope, receive, send):
         - lifespan -> mcp_app
         - /mcp and /mcp/* -> mcp_app (Streamable HTTP)
+        - /oauth/* and /.well-known/* -> oauth_app
         - all other routes -> flask_app via a2wsgi.WSGIMiddleware
     - In WSGI (environ, start_response):
         - calls flask_app directly
     - Proxies attributes to flask_app for backwards compatibility with tests and config.
     """
 
-    def __init__(self, mcp_app, flask_app):
+    def __init__(self, mcp_app, flask_app, oauth_app=None):
         self.mcp_app = mcp_app
         self.flask_app = flask_app
+        self.oauth_app = oauth_app or create_oauth_app()
         self.wsgi_app = WSGIMiddleware(flask_app)
 
     def __getattr__(self, name):
@@ -89,7 +95,14 @@ class CompositeApp:
                 await self.mcp_app(scope, receive, send)
                 return
 
+            if path.startswith("/oauth/") or path in (
+                "/.well-known/oauth-authorization-server",
+                "/.well-known/openid-configuration",
+            ):
+                await self.oauth_app(scope, receive, send)
+                return
+
         await self.wsgi_app(scope, receive, send)
 
 
-app = CompositeApp(mcp_app, flask_app)
+app = CompositeApp(mcp_app, flask_app, oauth_app)
