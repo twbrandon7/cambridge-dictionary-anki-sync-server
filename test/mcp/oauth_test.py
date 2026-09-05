@@ -213,6 +213,37 @@ class TestOAuthEndpoints(unittest.TestCase):
             self.assertIn("code", data["response_types_supported"])
             self.assertIn("S256", data["code_challenge_methods_supported"])
 
+    def test_discovery_with_headers_and_public_url(self):
+        # 1. With X-Forwarded-Proto: https
+        res = self.client.get(
+            "/.well-known/oauth-authorization-server",
+            headers={"x-forwarded-proto": "https", "host": "anki-sync-server.gkbsite.org"},
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["issuer"], "https://anki-sync-server.gkbsite.org")
+
+        # 2. With multi-hop X-Forwarded-Proto: https, http
+        res = self.client.get(
+            "/.well-known/oauth-authorization-server",
+            headers={"x-forwarded-proto": "https, http", "host": "anki-sync-server.gkbsite.org"},
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["issuer"], "https://anki-sync-server.gkbsite.org")
+
+        # 3. With CF-Visitor header
+        res = self.client.get(
+            "/.well-known/oauth-authorization-server",
+            headers={"cf-visitor": '{"scheme":"https"}', "host": "anki-sync-server.gkbsite.org"},
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["issuer"], "https://anki-sync-server.gkbsite.org")
+
+        # 4. With SERVER_PUBLIC_URL environment variable overriding
+        with patch.dict(os.environ, {"SERVER_PUBLIC_URL": "https://custom.domain.org/"}):
+            res = self.client.get("/.well-known/oauth-authorization-server")
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json()["issuer"], "https://custom.domain.org")
+
     def test_mcp_dual_authentication(self):
         # Generate valid access token
         access_token = generate_jwt_token("access", ttl=timedelta(hours=1), client_id="test-client")
