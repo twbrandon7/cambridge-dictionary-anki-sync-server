@@ -1,12 +1,11 @@
-version: "3.9"
 services:  
   app:
     build: ./
     restart: always
     env_file:
       - .env
-    volumes: 
-      - app-volume:/app/data
+    volumes:
+      - ./data:/app/data
     networks:
       - anki-network
 
@@ -15,7 +14,7 @@ services:
     restart: always
     command: uv run celery -A anki_sync_server.tasks.celery_app worker --loglevel=info --concurrency=1
     volumes:
-      - app-volume:/app/data
+      - ./data:/app/data
     networks:
       - anki-network
     depends_on:
@@ -40,18 +39,6 @@ services:
     ports:
       - "5000:80"
 
-  tunnel:
-    container_name: cloudflared-tunnel
-    restart: always
-    build: ./docker/tunnel
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-    networks:
-      - anki-network
-
 networks:
   anki-network:
     name: anki-network
-
-volumes:
-  app-volume:
