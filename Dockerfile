@@ -16,4 +16,4 @@ RUN uv sync
 
 RUN mkdir -p /app/data/
 
-CMD ["uv", "run", "uwsgi", "--http", "0.0.0.0:5000", "--master", "-p", "4", "--lazy-apps", "-w", "anki_sync_server.server.main:app"]
+CMD ["uv", "run", "uvicorn", "anki_sync_server.server.main:app", "--host", "0.0.0.0", "--port", "5000"]
