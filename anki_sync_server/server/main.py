@@ -1,6 +1,9 @@
 from a2wsgi import WSGIMiddleware
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+
+load_dotenv()
 
 from anki_sync_server.mcp.oauth import create_oauth_app
 from anki_sync_server.mcp.server import create_mcp_app

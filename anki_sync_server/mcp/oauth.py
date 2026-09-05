@@ -103,8 +103,23 @@ def get_base_url(request: Request) -> str:
         return env_url
 
     headers = request.headers
-    proto = headers.get("x-forwarded-proto") or request.url.scheme or "http"
+    proto = headers.get("x-forwarded-proto") or ""
+    if proto:
+        proto = proto.split(",")[0].strip()
+
+    # Fallback to cf-visitor header if present (e.g. '{"scheme":"https"}')
+    if not proto or proto == "http":
+        cf_visitor = headers.get("cf-visitor") or ""
+        if "https" in cf_visitor:
+            proto = "https"
+
+    if not proto:
+        proto = request.url.scheme or "http"
+
     host = headers.get("x-forwarded-host") or headers.get("host") or "localhost:5000"
+    if host:
+        host = host.split(",")[0].strip()
+
     return f"{proto}://{host}"
 
 
