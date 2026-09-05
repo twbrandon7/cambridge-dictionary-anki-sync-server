@@ -206,15 +206,15 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "word": "extraordinary",
-  "partOfSpeech": "adjective",
-  "guideWord": "very unusual",
-  "englishDefinition": "very unusual, special, unexpected, or strange",
-  "definitionTranslation": "非凡的；特別的；意想不到的；令人驚奇的",
-  "cefrLevel": "B2",
-  "code": "UK",
-  "englishExample": "He told the {{c1::extraordinary}} story of his escape.",
-  "exampleTranslation": "他講述了他非凡的逃生經歷。"
+  "word": "apple",
+  "partOfSpeech": "noun",
+  "guideWord": "",
+  "englishDefinition": "a round fruit with hard skin and soft, white flesh that grows on trees",
+  "definitionTranslation": "蘋果",
+  "cefrLevel": "A1",
+  "code": "[ C or U ]",
+  "englishExample": "to peel an {{c1::apple}}",
+  "exampleTranslation": "削蘋果"
 }
 ```
 
