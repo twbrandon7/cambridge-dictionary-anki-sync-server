@@ -368,11 +368,16 @@ The server natively exposes an MCP endpoint using the **Streamable HTTP** transp
 - **Transport**: Streamable HTTP
 
 ### Authentication
-MCP requests authenticate using your **Server API Key** (generated during `setup`):
-- Via header: `Authorization: Bearer <your_server_api_key>` or `X-API-Key: <your_server_api_key>`
-- Via query parameter: `http://localhost:5000/mcp?api_key=<your_server_api_key>`
-
-Unlike short-lived JWT tokens, your Server API Key does not expire, ensuring uninterrupted operation in long-lived MCP clients.
+The MCP server supports **Dual Authentication**:
+1. **OAuth 2.0 (Standard for Gemini)**: Supports standard OAuth 2.0 Authorization Code Flow with PKCE (for Gemini CLI) and confidential client credentials (for Gemini Enterprise).
+   - Authorization URL: `http://localhost:5000/oauth/authorize`
+   - Token URL: `http://localhost:5000/oauth/token`
+   - Discovery Metadata: `http://localhost:5000/.well-known/oauth-authorization-server`
+   - Access tokens are valid for 1 hour, with automatic token refresh supported via refresh tokens.
+   - When authorizing in the browser, simply enter your **Server API Key** to approve access.
+2. **Static Server API Key**: Direct key authentication for clients that support custom headers (Cursor, Claude Desktop, Windsurf):
+   - Via header: `Authorization: Bearer <your_server_api_key>` or `X-API-Key: <your_server_api_key>`
+   - Via query parameter: `http://localhost:5000/mcp?api_key=<your_server_api_key>`
 
 ### Available MCP Tools
 
@@ -404,6 +409,52 @@ Unlike short-lived JWT tokens, your Server API Key does not expire, ensuring uni
   - Guides the LLM in reading highlighted text or context, identifying vocabulary, and formatting the arguments required by `create_flashcard`.
 
 ### Client Configuration Examples
+
+#### Gemini CLI (`~/.gemini/settings.json`)
+The Gemini CLI supports automatic OAuth discovery out-of-the-box:
+
+```json
+{
+  "mcpServers": {
+    "anki": {
+      "url": "http://localhost:5000/mcp"
+    }
+  }
+}
+```
+
+Then in Gemini CLI, authenticate the connection:
+```bash
+/mcp auth anki
+```
+This opens your browser to `http://localhost:5000/oauth/authorize`. Enter your Server API Key and click **Authorize**. Gemini CLI will receive the OAuth callback on `http://localhost:7777/oauth/callback` and save the tokens automatically.
+
+If configuring OAuth manually in Gemini:
+```json
+{
+  "mcpServers": {
+    "anki": {
+      "url": "http://localhost:5000/mcp",
+      "oauth": {
+        "authorizationUrl": "http://localhost:5000/oauth/authorize",
+        "tokenUrl": "http://localhost:5000/oauth/token",
+        "clientId": "gemini-cli",
+        "scopes": ["mcp"]
+      }
+    }
+  }
+}
+```
+
+#### Gemini Enterprise / Custom MCP in Google Cloud Console
+When adding an MCP custom server in Gemini Enterprise:
+- **Server URL**: `https://<your-domain>/mcp` (StreamableHTTP)
+- **Authentication**: `OAuth 2.0`
+- **Authorization URL**: `https://<your-domain>/oauth/authorize`
+- **Access Token URL**: `https://<your-domain>/oauth/token`
+- **Client ID**: Configured `OAUTH_CLIENT_ID` in `.env` (or any string if public)
+- **Client Secret**: Configured `OAUTH_CLIENT_SECRET` in `.env`
+- **PKCE**: Enabled
 
 #### Cursor (`.cursor/mcp.json`)
 ```json
