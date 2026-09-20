@@ -29,14 +29,25 @@ def _get_anki():
         with _anki_lock:
             # Double-check locking pattern
             if _anki is None:
-                print("Creating Anki collection")
-                _collection_thread = ThreadWithReturnValue(target=create_anki_collection)
-                _collection_thread.start()
-                collection = _collection_thread.join()
-                
-                print("Loading Anki wrapper")
-                tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
-                _anki = Anki(collection, tts_service)
+                try:
+                    print("Creating Anki collection")
+                    _collection_thread = ThreadWithReturnValue(target=create_anki_collection)
+                    _collection_thread.start()
+                    collection = _collection_thread.join()
+                    
+                    if collection is None:
+                        raise Exception(
+                            "Failed to create Anki collection: collection is None. "
+                            "This may indicate a database error or the collection is already open in another process."
+                        )
+                    
+                    print("Loading Anki wrapper")
+                    tts_service = GcpTtsService(CredentialStorage().get_gcp_tts_api_key())
+                    _anki = Anki(collection, tts_service)
+                except Exception as e:
+                    print(f"Error initializing Anki: {e}")
+                    print("Check that the Anki database is not open in another process and is not corrupted.")
+                    raise
     return _anki
 
 
